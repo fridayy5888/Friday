@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FRIDAY</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600;1,700&family=Bebas+Neue&family=Space+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:#07060a;
+  color:#e8e2d0;
+  font-family:'Cormorant',serif;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ── CURSOR ── */
+#cur{position:fixed;z-index:9999;pointer-events:none;mix-blend-mode:difference}
+#cur-dot{width:8px;height:8px;background:#fff;border-radius:50%;position:absolute;transform:translate(-50%,-50%)}
+#cur-ring{width:40px;height:40px;border:1px solid rgba(255,255,255,.25);border-radius:50%;position:absolute;transform:translate(-50%,-50%);transition:width .3s,height .3s,border-color .3s}
+
+/* ── CANVAS ── */
+#bgcanvas{position:fixed;inset:0;z-index:1;pointer-events:none}
+
+/* ── VIGNETTE ── */
+#vig{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%, transparent 25%, rgba(7,6,10,.97) 100%)}
+
+/* ── NOISE ── */
+#noise{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.06;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ── ALL CONTENT ── */
+#content{position:relative;z-index:10}
+
+/* ════════════════════════
+   HERO
+════════════════════════ */
+#hero{
+  height:100vh;
+  display:grid;
+  grid-template-rows:1fr auto;
+  padding:0;
+  overflow:hidden;
+  position:relative;
+}
+
+/* big background word */
+#hero-ghost{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-52%);
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(14rem,40vw,34rem);
+  letter-spacing:.08em;
+  color:transparent;
+  -webkit-text-stroke:1px rgba(180,20,20,.09);
+  user-select:none;
+  white-space:nowrap;
+  animation:ghostpulse 8s ease-in-out infinite;
+  z-index:0;
+}
+@keyframes ghostpulse{
+  0%,100%{-webkit-text-stroke-color:rgba(180,20,20,.09)}
+  50%{-webkit-text-stroke-color:rgba(180,20,20,.22)}
+}
+
+.hero-top{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding:3rem 6vw;
+  position:relative;z-index:2;
+}
+.hero-top-label{
+  font-family:'Space Mono',monospace;
+  font-size:.6rem;letter-spacing:.5em;
+  color:rgba(232,226,208,.2);
+  text-transform:uppercase;
+  line-height:1.8;
+}
+.hero-top-label span{color:rgba(180,20,20,.7)}
+
+.hero-bottom{
+  padding:0 6vw 6vh;
+  position:relative;z-index:2;
+}
+.hero-kicker{
+  font-family:'Space Mono',monospace;
+  font-size:.62rem;letter-spacing:.5em;
+  color:rgba(180,20,20,.8);
+  text-transform:uppercase;
+  margin-bottom:1.5rem;
+  opacity:0;animation:fadeup .8s ease .3s forwards;
+}
+.hero-title{
+  font-family:'Cormorant',serif;
+  font-size:clamp(6rem,18vw,15rem);
+  font-weight:700;
+  font-style:italic;
+  line-height:.82;
+  letter-spacing:-.02em;
+  color:#e8e2d0;
+  opacity:0;animation:fadeup 1.2s cubic-bezier(.16,1,.3,1) .5s forwards;
+}
+.hero-title .line2{
+  display:block;
+  font-weight:300;
+  font-style:normal;
+  font-size:.28em;
+  letter-spacing:.12em;
+  color:rgba(232,226,208,.35);
+  margin-top:.6rem;
+  margin-left:.3em;
+}
+.hero-desc{
+  font-size:clamp(1rem,1.8vw,1.3rem);
+  font-style:italic;
+  color:rgba(232,226,208,.35);
+  line-height:1.7;
+  max-width:500px;
+  margin-top:2rem;
+  opacity:0;animation:fadeup .9s ease .9s forwards;
+}
+.hero-scroll{
+  position:absolute;bottom:4vh;right:6vw;
+  font-family:'Space Mono',monospace;
+  font-size:.52rem;letter-spacing:.4em;
+  color:rgba(232,226,208,.15);text-transform:uppercase;
+  writing-mode:vertical-rl;
+  opacity:0;animation:fadeup .8s ease 1.4s forwards;
+}
+.hero-scroll::after{
+  content:'';display:block;
+  width:1px;height:50px;
+  background:linear-gradient(to bottom,rgba(180,20,20,.4),transparent);
+  margin:.8rem auto 0;
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes fadeup{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{transform:scaleY(.7);opacity:.3}50%{transform:scaleY(1);opacity:1}}
+
+/* ════════════════════════
+   STORY BODY
+════════════════════════ */
+.spread{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  padding:10vh 6vw;
+  position:relative;
+}
+
+/* left-heavy */
+.spread-left{justify-content:flex-start}
+/* right-heavy */
+.spread-right{justify-content:flex-end}
+/* center */
+.spread-center{justify-content:center;text-align:center}
+
+.spread-inner{max-width:680px;width:100%}
+
+/* the decorative line number */
+.spread-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(10rem,28vw,22rem);
+  color:transparent;
+  -webkit-text-stroke:1px rgba(180,20,20,.08);
+  position:absolute;
+  line-height:1;
+  user-select:none;
+  pointer-events:none;
+}
+.num-left{left:-2vw;top:50%;transform:translateY(-50%)}
+.num-right{right:-2vw;top:50%;transform:translateY(-50%)}
+
+/* paragraph text */
+.para{
+  font-size:clamp(1.1rem,2vw,1.45rem);
+  line-height:2.05;
+  font-weight:300;
+  color:rgba(232,226,208,.5);
+}
+.para em{color:#e8e2d0;font-style:italic;font-weight:400}
+.para strong{color:rgba(180,20,20,.85);font-weight:400}
+.para + .para{margin-top:1.6em}
+
+/* pull quote */
+.pq{
+  font-size:clamp(2rem,5vw,4rem);
+  font-style:italic;
+  font-weight:600;
+  line-height:1.18;
+  color:#e8e2d0;
+  position:relative;
+  padding-left:2.5rem;
+}
+.pq::before{
+  content:'';
+  position:absolute;left:0;top:.1em;bottom:.1em;
+  width:2px;
+  background:linear-gradient(to bottom,rgba(180,20,20,.9),rgba(180,20,20,.2));
+}
+
+/* dialogue */
+.dq{
+  font-size:clamp(1.2rem,2.2vw,1.6rem);
+  font-style:italic;
+  font-weight:400;
+  line-height:1.85;
+  color:#e8e2d0;
+  padding:2.5rem 3rem;
+  border:1px solid rgba(180,20,20,.18);
+  border-top:2px solid rgba(180,20,20,.5);
+  position:relative;
+  background:rgba(180,20,20,.03);
+}
+.dq-who{
+  font-family:'Space Mono',monospace;
+  font-size:.56rem;letter-spacing:.4em;
+  color:rgba(180,20,20,.6);
+  text-transform:uppercase;
+  margin-bottom:1.2rem;
+}
+
+/* dead line */
+.dead{
+  font-family:'Space Mono',monospace;
+  font-size:.65rem;letter-spacing:.5em;
+  color:rgba(180,20,20,.55);
+  text-transform:uppercase;
+  margin-top:2rem;
+  display:flex;align-items:center;gap:1rem;
+}
+.dead::before{content:'';flex:0 0 30px;height:1px;background:rgba(180,20,20,.4)}
+
+/* divider */
+.div{
+  width:100%;max-width:800px;margin:0 auto;
+  height:1px;
+  background:linear-gradient(to right,transparent,rgba(180,20,20,.2),transparent);
+  position:relative;
+}
+.div::after{
+  content:'';position:absolute;
+  left:50%;top:-2px;transform:translateX(-50%);
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(180,20,20,.4);
+}
+
+/* ════════════════════════
+   FULL BLEED MOMENT
+════════════════════════ */
+.fullbleed{
+  min-height:70vh;
+  display:flex;align-items:center;justify-content:center;
+  text-align:center;
+  padding:8vh 8vw;
+  position:relative;
+  overflow:hidden;
+}
+.fullbleed-text{
+  font-size:clamp(3rem,9vw,8rem);
+  font-style:italic;font-weight:700;
+  line-height:1.05;
+  color:#e8e2d0;
+  position:relative;z-index:2;
+  max-width:900px;
+}
+.fullbleed-glow{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 60% at 50% 50%, rgba(120,8,8,.2) 0%, transparent 70%);
+}
+
+/* ════════════════════════
+   ENDING
+════════════════════════ */
+#ending{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  justify-content:center;
+  padding:10vh 6vw;
+  position:relative;
+  overflow:hidden;
+}
+#ending::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 70% 70% at 50% 50%, rgba(80,5,5,.3) 0%, transparent 65%);
+}
+.ending-inner{position:relative;z-index:2;max-width:700px}
+.ending-label{
+  font-family:'Space Mono',monospace;
+  font-size:.6rem;letter-spacing:.55em;
+  color:rgba(180,20,20,.5);
+  text-transform:uppercase;
+  margin-bottom:3rem;
+}
+.ending-title{
+  font-size:clamp(2.5rem,7vw,6rem);
+  font-style:italic;font-weight:600;
+  line-height:1.05;color:#e8e2d0;
+  margin-bottom:2rem;
+}
+.ending-body{
+  font-size:clamp(1.1rem,2vw,1.4rem);
+  font-style:italic;font-weight:300;
+  line-height:2.1;
+  color:rgba(232,226,208,.45);
+}
+.ending-body em{color:rgba(232,226,208,.8)}
+.ending-sig{
+  margin-top:4rem;
+  font-family:'Space Mono',monospace;
+  font-size:.58rem;letter-spacing:.4em;
+  color:rgba(232,226,208,.12);
+  text-transform:uppercase;
+}
+.ending-redline{
+  width:1px;height:0;
+  background:rgba(180,20,20,.6);
+  margin-top:3rem;
+}
+
+/* ════════════════════════
+   REVEAL
+════════════════════════ */
+.R{opacity:0;transform:translateY(20px);transition:opacity 1s ease,transform 1s ease}
+.R.show{opacity:1;transform:none}
+.R.d1{transition-delay:.12s}.R.d2{transition-delay:.26s}.R.d3{transition-delay:.44s}.R.d4{transition-delay:.64s}
+</style>
+</head>
+<body>
+<div id="cur"><div id="cur-dot"></div><div id="cur-ring"></div></div>
+<canvas id="bgcanvas"></canvas>
+<div id="vig"></div>
+<div id="noise"></div>
+
+<div id="content">
+
+<!-- ══ HERO ══ -->
+<section id="hero">
+  <div id="hero-ghost">FRIDAY</div>
+  <div class="hero-top">
+    <div class="hero-top-label">
+      A short story<br>
+      <span>Shaurya Anjney</span>
+    </div>
+    <div class="hero-top-label" id="clock-el">Friday — 00:00</div>
+  </div>
+  <div class="hero-bottom">
+    <p class="hero-kicker">Friday night · The loop begins</p>
+    <h1 class="hero-title">
+      Friday
+      <span class="line2">I remember my name… no. I don't.</span>
+    </h1>
+    <p class="hero-desc">A call. A mansion swallowed by dark.<br>A door that simply ceased to exist.<br>And a smile — <em style="color:rgba(232,226,208,.6)">"Welcome home."</em></p>
+    <div class="hero-scroll">Scroll</div>
+  </div>
+</section>
+
+<!-- ══ 1: THE NARRATOR ══ -->
+<div class="div R"></div>
+<section class="spread spread-left">
+  <div class="spread-num num-right">01</div>
+  <div class="spread-inner">
+    <p class="para R">I remember — yeah, I remember. My name is… <em>No. I don't remember my name.</em></p>
+    <p class="para R d1">At least I remember how it started. My oldest memory? A faint shimmer — a smile, a hug too warm for this world. Even though I've only lived here for 24 hours, it feels like days. Or even years. <em>I have no idea.</em></p>
+    <p class="para R d2">I remember it was a <em>Friday night</em> when all this started. Which week. Which date. No idea.</p>
+  </div>
+</section>
+
+<!-- ══ 2: THE WALK ══ -->
+<div class="div R"></div>
+<section class="spread spread-right">
+  <div class="spread-num num-left">02</div>
+  <div class="spread-inner">
+    <p class="para R">I was coming from work. It was late. The streets were <strong>screaming a quiet agony</strong> I didn't understand at that moment.</p>
+    <p class="para R d1">I could hear the faint hum of music in my EarPods. I was walking alone — no one was on the streets. Yet I felt an <em>unsettled cold in my spine.</em></p>
+  </div>
+</section>
+
+<!-- ══ 3: THE CALL ══ -->
+<div class="div R"></div>
+<section class="spread spread-left">
+  <div class="spread-num num-right">03</div>
+  <div class="spread-inner">
+    <p class="para R">Then came the call. A colleague. A quiet woman — no one really talked to her except me. We were close friends, yet I always felt <em>something was bothering her.</em></p>
+    <p class="para R d1">She was a woman of light brighter than the sun. A smile warmer than summer. Her presence — a comfort. A symbol of life itself.</p>
+    <p class="para R d2">When I picked up, she was <strong>sobbing.</strong> Not crying. Not weeping. <em>Sobbing.</em></p>
+  </div>
+</section>
+
+<!-- ══ HER WORDS ══ -->
+<section class="spread spread-center">
+  <div class="spread-inner R">
+    <div class="dq">
+      <div class="dq-who">Her voice — afraid</div>
+      Come to my home! I am not safe! Something… something is just <em>not right!</em> Please come to my home, I feel like I will——
+    </div>
+    <div class="dead R d1">And the line went dead.</div>
+  </div>
+</section>
+
+<!-- ══ FULLBLEED: RAN ══ -->
+<div class="fullbleed R">
+  <div class="fullbleed-glow"></div>
+  <p class="fullbleed-text">I ran.</p>
+</div>
+
+<!-- ══ 4: THE MANSION ══ -->
+<div class="div R"></div>
+<section class="spread spread-right">
+  <div class="spread-num num-left">04</div>
+  <div class="spread-inner">
+    <p class="para R">Her mansion — usually a symbol of beauty. That night the beauty felt <strong>stolen. Erased.</strong> It felt like the whole place had been abandoned long ago.</p>
+    <p class="para R d1">No guards. No lights. Completely different than usual.</p>
+    <p class="para R d2">I slipped past the gate. It gave a low, eerie creak. Its touch — <em>wet and rusted.</em></p>
+  </div>
+</section>
+
+<!-- ══ 5: THE KNOCK ══ -->
+<div class="div R"></div>
+<section class="spread spread-left">
+  <div class="spread-num num-right">05</div>
+  <div class="spread-inner">
+    <div class="pq R">Tak-tak tak.</div>
+    <p class="para R d1" style="margin-top:2rem">The sound echoed from inside — as if the whole house were hollow. No one came. I tried her number. Three rings. No answer. <em>A dread settled in my stomach.</em></p>
+    <p class="para R d2">My hand found a rock. The window broke before I realized what I was doing. Inside — <strong>dead-black.</strong> Silent as a prison of its own pain.</p>
+  </div>
+</section>
+
+<!-- ══ MIDNIGHT ══ -->
+<section class="spread spread-center">
+  <div class="spread-inner R">
+    <p class="pq" style="padding-left:0;border:none;text-align:center;font-size:clamp(1.5rem,3.5vw,2.8rem);color:rgba(232,226,208,.4)">
+      Then the clock chimed once — from inside.
+    </p>
+    <p class="para R d1" style="margin-top:2rem;text-align:center;font-size:1.1rem">It was 12 a.m. The start of Saturday.</p>
+  </div>
+</section>
+
+<!-- ══ 6: INSIDE ══ -->
+<div class="div R"></div>
+<section class="spread spread-right">
+  <div class="spread-num num-left">06</div>
+  <div class="spread-inner">
+    <p class="para R">I tried the door. It unlocked with a <em>soft click.</em> I went inside and said — <em>"Hello? Anyone?"</em></p>
+    <p class="para R d1">Nothing.</p>
+    <p class="para R d2">I reached back for the door.</p>
+  </div>
+</section>
+
+<!-- ══ FULLBLEED: DOOR ══ -->
+<div class="fullbleed R">
+  <div class="fullbleed-glow"></div>
+  <p class="fullbleed-text">The door wasn't there.</p>
+</div>
+
+<!-- ══ 7: THE HALLWAY ══ -->
+<div class="div R"></div>
+<section class="spread spread-left">
+  <div class="spread-num num-right">07</div>
+  <div class="spread-inner">
+    <p class="para R">It didn't close behind me. It simply <strong>disappeared.</strong> I was standing alone in darkness with no exit.</p>
+    <p class="para R d1">Then I heard her. Muffled. Distant. I followed the sound for around five minutes through the dark hallway. It kept getting clearer. Closer.</p>
+    <p class="para R d2">Then I saw her — a shadowy figure. Sitting near her phone. Hair tattered. <em>Sobbing.</em></p>
+  </div>
+</section>
+
+<!-- ══ 8: THE LOOP ══ -->
+<div class="div R"></div>
+<section class="spread spread-center">
+  <div class="spread-inner">
+    <p class="para R" style="text-align:center">She was speaking on the phone. The words were crystal clear now.</p>
+    <div class="dq R d1" style="margin-top:2rem">
+      <div class="dq-who">The exact same words</div>
+      Come to my home! I am not safe! Something… something is just not right! Please come to my home, I feel like I will——
+    </div>
+    <p class="para R d2" style="margin-top:2rem;text-align:center">She turned towards me. <em>Smiled calmly.</em></p>
+  </div>
+</section>
+
+<!-- ══ FULLBLEED: WELCOME ══ -->
+<div class="fullbleed R">
+  <div class="fullbleed-glow"></div>
+  <p class="fullbleed-text">"Welcome home."</p>
+</div>
+
+<!-- ══ BLACKOUT ══ -->
+<section class="spread spread-left">
+  <div class="spread-inner">
+    <p class="para R">Then — I don't know what happened.</p>
+    <p class="para R d1"><em>I remember nothing.</em></p>
+    <p class="para R d2" style="margin-top:1.5em">Wait. What was I even saying?</p>
+  </div>
+</section>
+
+<!-- ══ ENDING ══ -->
+<div class="div R"></div>
+<section id="ending">
+  <div class="ending-inner">
+    <p class="ending-label R">Epilogue</p>
+    <h2 class="ending-title R d1">I enjoy it here.<br>I trust her.</h2>
+    <p class="ending-body R d2">
+      I don't know — these days I am forgetting a lot. Making up stories. I need to relax.<br><br>
+      As of now I am just crashing in my colleague's house. It's been only 24 hours but I don't know — it feels like years.<br><br>
+      My colleague is really sweet. She doesn't even let me go out. She says it's <em>safe in here.</em> She takes care of everything.<br><br>
+      <em>I think I'll just enjoy my Friday night.</em>
+    </p>
+    <div class="ending-sig R d3">— Shaurya Anjney</div>
+    <div class="ending-redline R" id="redline"></div>
+  </div>
+</section>
+
+</div><!-- /content -->
+
+<script>
+/* ── CURSOR ── */
+const dot=document.getElementById('cur-dot'),ring=document.getElementById('cur-ring');
+const cur=document.getElementById('cur');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  dot.style.cssText=`left:${mx}px;top:${my}px`;
+});
+(function loop(){rx+=(mx-rx)*.1;ry+=(my-ry)*.1;ring.style.cssText=`left:${rx}px;top:${ry}px`;requestAnimationFrame(loop)})();
+
+/* ── BACKGROUND CANVAS ── */
+const cvs=document.getElementById('bgcanvas');
+const ctx=cvs.getContext('2d');
+let CW,CH;
+const particles=[];
+
+function resize(){CW=cvs.width=innerWidth;CH=cvs.height=innerHeight}
+resize();window.addEventListener('resize',resize);
+
+// spawn particles
+for(let i=0;i<180;i++){
+  particles.push({
+    x:Math.random()*2000,
+    y:Math.random()*2000,
+    vx:(Math.random()-.5)*.18,
+    vy:-(Math.random()*.25+.04),
+    r:Math.random()*.8+.1,
+    a:Math.random()*.6,
+    da:(Math.random()-.5)*.005,
+    red:Math.random()>.82
+  });
+}
+
+function draw(){
+  ctx.clearRect(0,0,CW,CH);
+  // bottom atmospheric glow
+  const g=ctx.createRadialGradient(CW/2,CH,0,CW/2,CH,CH);
+  g.addColorStop(0,'rgba(100,5,5,.12)');
+  g.addColorStop(.5,'rgba(40,2,2,.06)');
+  g.addColorStop(1,'transparent');
+  ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);
+
+  particles.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.a+=p.da;
+    if(p.a<.02)p.da=Math.abs(p.da);
+    if(p.a>.7)p.da=-Math.abs(p.da);
+    if(p.y<-4){p.y=CH+4;p.x=Math.random()*CW}
+    if(p.x<-4)p.x=CW+4;if(p.x>CW+4)p.x=-4;
+    ctx.beginPath();
+    ctx.arc(p.x%CW,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=p.red?`rgba(180,20,20,${p.a*.5})`:`rgba(232,226,208,${p.a*.3})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* ── CLOCK ── */
+function tick(){
+  const n=new Date();
+  document.getElementById('clock-el').textContent=
+    `Friday — ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+}
+tick();setInterval(tick,20000);
+
+/* ── SCROLL REVEAL ── */
+const revs=document.querySelectorAll('.R');
+const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('show')});
+},{threshold:.12});
+revs.forEach(r=>io.observe(r));
+
+/* ── RED LINE on ending ── */
+const rl=document.getElementById('redline');
+const rlio=new IntersectionObserver(es=>{
+  if(es[0].isIntersecting){
+    rl.style.transition='height 2.5s ease .8s';
+    rl.style.height='80px';
+  }
+},{threshold:.5});
+rlio.observe(document.getElementById('ending'));
+
+/* ── PARALLAX hero ── */
+window.addEventListener('scroll',()=>{
+  const y=scrollY;
+  const t=document.querySelector('.hero-title');
+  const g=document.getElementById('hero-ghost');
+  if(t)t.style.transform=`translateY(${y*.2}px)`;
+  if(g)g.style.transform=`translate(-50%,-52%) translateY(${y*.1}px)`;
+},{passive:true});
+</script>
+</body>
+</html>
